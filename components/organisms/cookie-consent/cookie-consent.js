@@ -1,21 +1,5 @@
 /* globals $ */
 
-// Show it when we are in Toolbox
-document.addEventListener('ToolboxReady', () => {
-    // Open it in the cookie consent page only for toolbox
-    if (window.location.href.includes('cookie-consent')) {
-        if (!window.cookie_consent_popup) {
-          window.cookie_consent_popup = cookieconsent(get_cookieconsent_config());
-        }
-        window.cookie_consent_popup.open();
-    } else {
-        // Force close if we are not on the correct page
-        if (window.cookie_consent_popup) {
-            window.cookie_consent_popup.close();
-        }
-    }
-});
-
 function get_cookieconsent_config() {
     // Translation
     var cookieI18n = {
@@ -73,22 +57,45 @@ function get_cookieconsent_config() {
         },
         "cookie": {
         "name": "petitpois", // Chosen by a magical unicorn!
-        "domain": domain_name
+        "domain": domain_name,
+        "autoAttach": false // attach it manually to the end, or SEO will crawl it before any content
         }
     }
     return config;
 }
 
 const cookieconsent = (cookieconsent_config) => {
-    var p;
-    // Init cookieconsent
-    window.cookieconsent.initialise(cookieconsent_config, function (popup) {
-        p = popup;
-      }, function (err) {
-        console.error(err);
-      }
-    );
-    return p;
+    if (undefined !== window.sources) {
+        // Open it in the cookie consent page only for Toolbox
+        if (window.location.href.includes('cookie-consent')) {
+            if (!window.cookie_consent_popup) {
+                window.cookieconsent.initialise(cookieconsent_config, function (popup) {
+                    window.cookie_consent_popup = popup;
+                    document.body.appendChild(popup.element);
+                    }, function (err) {
+                        console.error(err);
+                    }
+                );
+            }
+            window.cookie_consent_popup.open();
+        } else {
+            // Force close if we are not on the correct page
+            if (window.cookie_consent_popup) {
+                window.cookie_consent_popup.close();
+            }
+        }
+    } else {
+        var p;
+        // Init cookieconsent for the site
+        window.cookieconsent.initialise(cookieconsent_config, function (popup) {
+            p = popup;
+            document.body.appendChild(p.element);
+            }, function (err) {
+                console.error(err);
+            }
+        );
+        return p;
+    }
 };
 
 export default cookieconsent;
